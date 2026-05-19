@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <title>20-in-1 Ultimate Retro Arcade Hub</title>
+    <style>
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #0d0e15; font-family: 'Segoe UI', sans-serif;
+            overflow: hidden; color: #fff; user-select: none;
+        }
+
+        @media screen and (orientation: portrait) {
+            #portrait-warning { display: flex !important; }
+        }
+        #portrait-warning {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #11121a; color: #ffaa00; z-index: 9999;
+            justify-content: center; align-items: center; text-align: center; font-size: 1.5rem; font-weight: bold;
+        }
+
+        #hub-container {
+            display: flex; width: 100%; height: 100%; padding: 15px; gap: 15px;
+        }
+
+        #sidebar {
+            width: 25%; height: 100%; background: #161824;
+            border-radius: 8px; padding: 15px; display: flex; flex-direction: column;
+            border: 2px solid #282c3f; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        #sidebar h2 {
+            margin: 0 0 10px 0; color: #ffaa00; font-size: 1.4rem; text-transform: uppercase;
+            letter-spacing: 1px; border-bottom: 2px solid #ffaa00; padding-bottom: 5px;
+        }
+        
+        #game-list {
+            flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+            padding-right: 4px;
+        }
+        .game-item {
+            background: #202436; padding: 10px; border-radius: 5px;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            font-weight: bold; border: 1px solid transparent; transition: all 0.2s ease;
+        }
+        .game-item:hover, .game-item.active {
+            background: #ffaa00; color: #000; border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,170,0,0.4);
+        }
+        .badge {
+            font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; background: rgba(0,0,0,0.3); color: #fff;
+        }
+        .game-item.active .badge { background: #000; color: #ffaa00; }
+
+        #game-display-panel {
+            flex-grow: 1; height: 100%; background: #000; border-radius: 8px;
+            position: relative; border: 3px solid #282c3f; overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,255,170,0.1), 0 4px 20px rgba(0,0,0,0.8);
+        }
+        #game-canvas-iframe {
+            width: 100%; height: 100%; border: none; background: #000;
+        }
+
+        #screen-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a1c29 20%, #0a0b12 90%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 5; text-align: center; padding: 20px;
+        }
+        #screen-overlay h1 { color: #ffaa00; font-size: 2.5rem; margin: 0 0 10px 0; text-shadow: 0 0 10px rgba(255,170,0,0.5); }
+        #screen-overlay p { color: #aaa; margin: 0; font-size: 1rem; }
+
+        #back-hub-btn {
+            position: absolute; top: 15px; right: 15px; background: rgba(255,0,0,0.85);
+            color: white; border: none; padding: 8px 16px; font-weight: bold;
+            border-radius: 4px; cursor: pointer; display: none; z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        #back-hub-btn:hover { background: #ff2222; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #161824; }
+        ::-webkit-scrollbar-thumb { background: #282c3f; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ffaa00; }
+    </style>
+</head>
+<body>
+
+    <div id="portrait-warning">🔄 Please Rotate Your Device Horizontally to Landscape Mode!</div>
+
+    <div id="hub-container">
+        
+        <div id="sidebar">
+            <h2>🎮 20-in-1 Hub</h2>
+            <div id="game-list">
+                <!-- Dynamically generated -->
+            </div>
+        </div>
+
+        <div id="game-display-panel">
+            <button id="back-hub-btn" onclick="exitToHub()">✕ EXIT MATCH</button>
+            
+            <div id="screen-overlay">
+                <h1>ARCADE CLASSICS</h1>
+                <p>Select a popular 2D or 3D game from the menu list to launch instantly on your device!</p>
+            </div>
+            
+            <iframe id="game-canvas-iframe" src="" allow="autoplay; gamepad; keyboard;"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        // --- FIXED OPEN-SOURCE WORKING MIRRORS ---
+        const gameCatalog = [
+            { id: 1, name: "3D Slope Runner", type: "3D", url: "https://tbg95.github.io/slope/" },
+            { id: 2, name: "2D Classic Snake", type: "2D", url: "https://gnhub.github.io/snake/" },
+            { id: 3, name: "Retro Tetris DX", type: "2D", url: "https://chvin.github.io/react-tetris/" },
+            { id: 4, name: "Flappy Bird HD", type: "2D", url: "https://nebez.github.io/floppybird/" },
+            { id: 5, name: "Pac-Man 2D World", type: "2D", url: "https://luciopaiva.com/markdown-pacman/" },
+            { id: 6, name: "Space Invaders DX", type: "2D", url: "https://marian42.github.io/spaceinvaders/" },
+            { id: 7, name: "Hextris Speed Puzzle", type: "2D", url: "https://hextris.io/" },
+            { id: 8, name: "Classic 2D Breakout", type: "2D", url: "https://gnhub.github.io/breakout/" },
+            { id: 9, name: "Procedural 2D Maze", type: "2D", url: "https://fatiherikli.github.io/maze/" },
+            { id: 10, name: "2048 Swipe Strategy", type: "2D", url: "https://gabrielecirulli.github.io/2048/" },
+            { id: 11, name: "Tic-Tac-Toe AI", type: "2D", url: "https://gnhub.github.io/tictactoe/" },
+            { id: 12, name: "Classic 2D Pong Pro", type: "2D", url: "https://gnhub.github.io/pong/" },
+            { id: 13, name: "Hepta Free Puzzle", type: "2D", url: "https://rawgit.com/jakesgordon/javascript-hepta/master/index.html" },
+            { id: 14, name: "Tiny 3D Racing", type: "3D", url: "https://codeincomplete.com/projects/racer/" },
+            { id: 15, name: "3D Cube Runner", type: "3D", url: "https://hellorun.com/" },
+            { id: 16, name: "Tower Bloxx Stack", type: "2D", url: "https://cpp3.github.io/TowerBlocks/" },
+            { id: 17, name: "Omni 2D Asteroids", type: "2D", url: "https://gnhub.github.io/asteroids/" },
+            { id: 18, name: "Cyber Hexagon Run", type: "2D", url: "https://terrycavanagh.com/hexagon/html5/" },
+            { id: 19, name: "Snakify Retro Grid", type: "2D", url: "https://grunwalsky.github.io/snake-game/" },
+            { id: 20, name: "Retro Brick Breaker", type: "2D", url: "https://tangentstorm.github.io/js/breakout.html" }
+        ];
+
+        const listContainer = document.getElementById('game-list');
+        
+        function renderMenuCatalog() {
+            gameCatalog.forEach(game => {
+                const item = document.createElement('div');
+                item.className = 'game-item';
+                item.id = `game-item-${game.id}`;
+                item.onclick = () => launchTargetGame(game);
+
+                item.innerHTML = `
+                    <span>${game.name}</span>
+                    <span class="badge">${game.type}</span>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        const iframe = document.getElementById('game-canvas-iframe');
+        const overlay = document.getElementById('screen-overlay');
+        const backBtn = document.getElementById('back-hub-btn');
+
+        function launchTargetGame(game) {
+            document.querySelectorAll('.game-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`game-item-${game.id}`).classList.add('active');
+
+            iframe.src = game.url;
+            overlay.style.display = 'none';
+            backBtn.style.display = 'block';
+        }
+
+        function exitToHub() {
+            iframe.src = "";
+            document.querySelectorAll('.game-item').forEach(el => el.classList.remove('active'));
+            overlay.style.display = 'flex';
+            backBtn.style.display = 'none';
+        }
+
+        renderMenuCatalog();
+    </script>
+</body>
+</html>
